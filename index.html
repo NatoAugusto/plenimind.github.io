@@ -1052,21 +1052,38 @@
     result.style.flexDirection = 'column';
     result.style.alignItems = 'center';
 
+    // Total score
+    const totalScore = scores.reduce((a, b) => a + b, 0);
+
     // Find top inimigo
     let maxScore = 0;
     let topIdx = 0;
     scores.forEach((s, i) => { if (s > maxScore) { maxScore = s; topIdx = i; } });
 
-    const top = INIMIGOS[topIdx];
-    document.getElementById('resultTitle').textContent = top.name;
-    document.getElementById('resultScience').textContent = top.science;
+    // Determine level
+    // 8–16 = equilibrado, 17–24 = atenção, 25–32 = dominante
+    let level = 'equilibrado';
+    if (totalScore >= 25) level = 'dominante';
+    else if (totalScore >= 17) level = 'atencao';
+
+    // Hero content based on level
+    if (level === 'equilibrado') {
+      document.getElementById('resultTitle').textContent = 'Mente Equilibrada';
+      document.getElementById('resultScience').textContent = 'Nenhum inimigo dominante identificado · Continue cultivando';
+    } else if (level === 'atencao') {
+      document.getElementById('resultTitle').textContent = topIdx >= 0 ? INIMIGOS[topIdx].name : '—';
+      document.getElementById('resultScience').textContent = 'Em atenção · ' + (INIMIGOS[topIdx] ? INIMIGOS[topIdx].science : '');
+    } else {
+      document.getElementById('resultTitle').textContent = INIMIGOS[topIdx].name;
+      document.getElementById('resultScience').textContent = INIMIGOS[topIdx].science;
+    }
 
     // Score bars
     const maxPossible = 4;
     const sorted = scores.map((s, i) => ({ s, i })).sort((a, b) => b.s - a.s);
     let barsHTML = '';
     sorted.forEach(({ s, i }) => {
-      const isTop = i === topIdx;
+      const isTop = level !== 'equilibrado' && i === topIdx;
       const pct = (s / maxPossible) * 100;
       barsHTML += `
         <div class="score-row">
@@ -1080,26 +1097,78 @@
     });
     document.getElementById('scoresBars').innerHTML = barsHTML;
 
-    // Description
-    document.getElementById('resultDesc').innerHTML = `
-      <div class="rd-block">
-        <div class="rd-label">O que é esse inimigo</div>
-        <div class="rd-text">${top.desc}</div>
-      </div>
-      <div class="rd-block">
-        <div class="rd-label">O custo real</div>
-        <div class="rd-text">${top.cost}</div>
-      </div>
-      <div class="antidote-block">
-        <div class="ab-label">💚 O Antídoto</div>
-        <div class="ab-title">${top.antidote}</div>
-        <div class="ab-text">${top.antidoteDesc}</div>
-      </div>
-    `;
+    // Description based on level
+    let descHTML = '';
 
+    if (level === 'equilibrado') {
+      descHTML = `
+        <div class="rd-block">
+          <div class="rd-label">✨ Seu resultado</div>
+          <div class="rd-text">
+            Parabéns. Suas respostas indicam uma mente equilibrada — nenhum padrão mental destrutivo está dominando sua trajetória agora.
+            <br><br>
+            Isso não significa ausência de desafios. Significa que você já desenvolveu recursos internos sólidos para lidar com eles.
+            <br><br>
+            <strong>Continue cultivando.</strong> Mentalidade equilibrada não é um estado permanente — é uma prática diária.
+          </div>
+        </div>
+        <div class="rd-block">
+          <div class="rd-label">O que fazer agora</div>
+          <div class="rd-text">
+            Seu próximo passo não é resolver um problema — é <strong>expandir o que já funciona.</strong>
+            <br><br>
+            Aprofunde seu autoconhecimento. Estude os 8 inimigos para reconhecê-los quando tentarem aparecer. E ajude quem ainda está travado por eles.
+          </div>
+        </div>
+        <div class="antidote-block">
+          <div class="ab-label">💚 Sua missão</div>
+          <div class="ab-title">Florescer — não só sobreviver</div>
+          <div class="ab-text">Seligman provou que ausência de problema não é bem-estar. Bem-estar é construção ativa. <em>Continue construindo.</em></div>
+        </div>
+      `;
+    } else if (level === 'atencao') {
+      const top = INIMIGOS[topIdx];
+      descHTML = `
+        <div class="rd-block">
+          <div class="rd-label">⚠️ Atenção</div>
+          <div class="rd-text">
+            Seu resultado indica que <strong>${top.name}</strong> está presente na sua trajetória — ainda não de forma dominante, mas com potencial de crescer se não for observado.
+            <br><br>
+            Esse é o momento ideal para agir. Padrões mentais são muito mais fáceis de corrigir quando ainda estão se formando do que quando já estão enraizados.
+          </div>
+        </div>
+        <div class="rd-block">
+          <div class="rd-label">O que é esse padrão</div>
+          <div class="rd-text">${top.desc}</div>
+        </div>
+        <div class="antidote-block">
+          <div class="ab-label">💚 O Antídoto</div>
+          <div class="ab-title">${top.antidote}</div>
+          <div class="ab-text">${top.antidoteDesc}</div>
+        </div>
+      `;
+    } else {
+      const top = INIMIGOS[topIdx];
+      descHTML = `
+        <div class="rd-block">
+          <div class="rd-label">O que é esse inimigo</div>
+          <div class="rd-text">${top.desc}</div>
+        </div>
+        <div class="rd-block">
+          <div class="rd-label">O custo real</div>
+          <div class="rd-text">${top.cost}</div>
+        </div>
+        <div class="antidote-block">
+          <div class="ab-label">💚 O Antídoto</div>
+          <div class="ab-title">${top.antidote}</div>
+          <div class="ab-text">${top.antidoteDesc}</div>
+        </div>
+      `;
+    }
+
+    document.getElementById('resultDesc').innerHTML = descHTML;
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Animate bars after render
     setTimeout(() => {
       document.querySelectorAll('.score-bar-fill').forEach(b => {
         b.style.width = b.style.width;
